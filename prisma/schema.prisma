@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  plants Plant[]
+
+  @@map("users")
+}
+
+model Plant {
+  id                    String    @id @default(cuid())
+  userId                String
+  name                  String    @default("Unbekannt")
+  species               String?
+  variety               String?
+  purchaseDate          DateTime  @default(now())
+  location              String    @default("Unbekannt")
+  notes                 String?
+  origin                String?
+  price                 Float?
+  substrate             String?
+  potSize               String?
+  lightCondition        String?
+  wateringIntervalDays  Int?
+  fertilizingIntervalDays Int?
+  photoUrl              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIns          PlantCheckIn[]
+  wateringEvents    WateringEvent[]
+  fertilizingEvents FertilizingEvent[]
+
+  @@index([userId])
+  @@index([location])
+  @@map("plants")
+}
+
+model PlantCheckIn {
+  id        String   @id @default(cuid())
+  plantId   String
+  photoUrl  String?
+  notes     String?
+  status    String   @default("ok") // ok, thirsty, pests, repotted, sick, growing
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  plant Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId])
+  @@index([date])
+  @@unique([plantId, date])
+  @@map("plant_check_ins")
+}
+
+model WateringEvent {
+  id        String   @id @default(cuid())
+  plantId   String
+  date      DateTime @default(now())
+  notes     String?
+  createdAt DateTime @default(now())
+
+  plant Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId])
+  @@index([date])
+  @@map("watering_events")
+}
+
+model FertilizingEvent {
+  id        String   @id @default(cuid())
+  plantId   String
+  date      DateTime @default(now())
+  notes     String?
+  fertilizer String?
+  createdAt DateTime @default(now())
+
+  plant Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
+
+  @@index([plantId])
+  @@index([date])
+  @@map("fertilizing_events")
+}

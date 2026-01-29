@@ -1,0 +1,22 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# production
+build/
+
+# env files
+.env
+.env*.local
+
+# debug
+npm-debug.log*
+
+# IDE / tools
+.claude/
+
+# OS
+.DS_Store
