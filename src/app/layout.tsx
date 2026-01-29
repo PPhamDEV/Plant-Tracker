@@ -7,6 +7,11 @@ export const metadata: Metadata = {
   title: "Plant Tracker",
   description: "Verfolge deine Pflanzen, Gießpläne und Wachstum.",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Plant Tracker",
+  },
 };
 
 export const viewport: Viewport = {

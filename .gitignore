@@ -18,5 +18,8 @@ npm-debug.log*
 # IDE / tools
 .claude/
 
+# PWA (build artifact)
+public/sw.js
+
 # OS
 .DS_Store

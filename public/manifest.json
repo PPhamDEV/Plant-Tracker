@@ -3,7 +3,10 @@
   "short_name": "Plants",
   "description": "Verfolge deine Pflanzen, Gießpläne und Wachstum.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
+  "lang": "de",
   "background_color": "#ffffff",
   "theme_color": "#16a34a",
   "icons": [
@@ -16,6 +19,12 @@
       "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
