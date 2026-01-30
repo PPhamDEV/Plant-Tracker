@@ -1,10 +1,8 @@
 import { db } from "@/lib/db";
 import { getCurrentUserId } from "@/lib/user";
+import { auth } from "@/lib/auth";
 import { createPresignedReadUrl } from "@/lib/s3";
-import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Leaf, Droplets, CalendarCheck, AlertTriangle, Plus } from "lucide-react";
+import { DashboardClient, type DashboardData } from "@/components/dashboard/dashboard-client";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +20,60 @@ async function resolvePlantPhotoUrl(plant: PlantWithWatering): Promise<string | 
   return plant.photoUrl || null;
 }
 
-async function getDashboardData() {
+function calculateStreak(dates: Date[]): number {
+  if (dates.length === 0) return 0;
+
+  // Get unique days (YYYY-MM-DD), sorted descending
+  const uniqueDays = [
+    ...new Set(
+      dates.map((d) => {
+        const local = new Date(d);
+        return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, "0")}-${String(local.getDate()).padStart(2, "0")}`;
+      })
+    ),
+  ].sort().reverse();
+
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
+  // Streak must start from today or yesterday
+  const firstDay = uniqueDays[0];
+  if (!firstDay) return 0;
+
+  const firstDate = new Date(firstDay + "T00:00:00");
+  const todayDate = new Date(todayStr + "T00:00:00");
+  const diffFromToday = Math.floor((todayDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+  if (diffFromToday > 1) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < uniqueDays.length; i++) {
+    const curr = new Date(uniqueDays[i] + "T00:00:00");
+    const prev = new Date(uniqueDays[i - 1] + "T00:00:00");
+    const diff = Math.floor((prev.getTime() - curr.getTime()) / (1000 * 60 * 60 * 24));
+    if (diff === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+
+  return streak;
+}
+
+async function getDashboardData(): Promise<DashboardData> {
   try {
     const userId = await getCurrentUserId();
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    const [plantCount, todayCheckIns, plants] = await Promise.all([
+    // Get user name
+    const session = await auth();
+    const userName = session?.user?.name ?? null;
+
+    // Fetch streak data: all care events from last 100 days
+    const hundredDaysAgo = new Date(now.getTime() - 100 * 24 * 60 * 60 * 1000);
+
+    const [plantCount, todayCheckIns, plants, wateringDates, fertilizingDates] = await Promise.all([
       db.plant.count({ where: { userId } }),
       db.plantCheckIn.count({ where: { date: { gte: todayStart }, plant: { userId } } }),
       db.plant.findMany({
@@ -38,7 +83,22 @@ async function getDashboardData() {
           wateringEvents: { orderBy: { date: "desc" }, take: 1 },
         },
       }),
+      db.wateringEvent.findMany({
+        where: { plant: { userId }, date: { gte: hundredDaysAgo } },
+        select: { date: true },
+      }),
+      db.fertilizingEvent.findMany({
+        where: { plant: { userId }, date: { gte: hundredDaysAgo } },
+        select: { date: true },
+      }),
     ]);
+
+    // Calculate streak from combined care events
+    const allCareDates = [
+      ...wateringDates.map((w) => w.date),
+      ...fertilizingDates.map((f) => f.date),
+    ];
+    const streak = calculateStreak(allCareDates);
 
     // Plants overdue for watering
     const overdueWatering = plants.filter((plant) => {
@@ -57,163 +117,64 @@ async function getDashboardData() {
     const checkedInIds = new Set(plantsWithCheckIn.map((c) => c.plantId));
     const needsCheckIn = plants.filter((p) => !checkedInIds.has(p.id));
 
-    return { plantCount, todayCheckIns, overdueWatering, needsCheckIn };
+    // Resolve photo URLs and build overdue plants with progress data
+    const overduePlants = await Promise.all(
+      overdueWatering.slice(0, 8).map(async (plant) => {
+        const lastWatered = plant.wateringEvents[0]?.date;
+        const daysSinceWatered = lastWatered
+          ? Math.floor((now.getTime() - lastWatered.getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+        const wateringProgress =
+          plant.wateringIntervalDays && daysSinceWatered !== null
+            ? daysSinceWatered / plant.wateringIntervalDays
+            : 1;
+
+        return {
+          id: plant.id,
+          name: plant.name,
+          location: plant.location,
+          resolvedPhotoUrl: await resolvePlantPhotoUrl(plant),
+          wateringProgress,
+          daysSinceWatered,
+        };
+      })
+    );
+
+    const needsCheckInPlants = await Promise.all(
+      needsCheckIn.slice(0, 8).map(async (plant) => ({
+        id: plant.id,
+        name: plant.name,
+        location: plant.location,
+        resolvedPhotoUrl: await resolvePlantPhotoUrl(plant),
+      }))
+    );
+
+    return {
+      userName,
+      plantCount,
+      todayCheckIns,
+      overdueCount: overdueWatering.length,
+      needsCheckInCount: needsCheckIn.length,
+      streak,
+      overduePlants,
+      needsCheckInPlants,
+    };
   } catch {
-    return { plantCount: 0, todayCheckIns: 0, overdueWatering: [] as PlantWithWatering[], needsCheckIn: [] as PlantWithWatering[] };
+    return {
+      userName: null,
+      plantCount: 0,
+      todayCheckIns: 0,
+      overdueCount: 0,
+      needsCheckInCount: 0,
+      streak: 0,
+      overduePlants: [],
+      needsCheckInPlants: [],
+    };
   }
 }
 
 export default async function DashboardPage() {
-  const { plantCount, todayCheckIns, overdueWatering, needsCheckIn } = await getDashboardData();
+  const data = await getDashboardData();
 
-  // Resolve photo URLs
-  const overdueWithUrls = await Promise.all(
-    overdueWatering.slice(0, 5).map(async (p) => ({
-      ...p,
-      resolvedPhotoUrl: await resolvePlantPhotoUrl(p),
-    }))
-  );
-  const needsCheckInWithUrls = await Promise.all(
-    needsCheckIn.slice(0, 5).map(async (p) => ({
-      ...p,
-      resolvedPhotoUrl: await resolvePlantPhotoUrl(p),
-    }))
-  );
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <Link href="/plants/new">
-          <Button size="sm">
-            <Plus className="mr-1 h-4 w-4" />
-            Neue Pflanze
-          </Button>
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Leaf className="h-4 w-4" />
-              Pflanzen
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{plantCount}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <CalendarCheck className="h-4 w-4" />
-              Check-ins heute
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{todayCheckIns}</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Droplets className="h-4 w-4" />
-              Gießen fällig
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-              {overdueWatering.length}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <AlertTriangle className="h-4 w-4" />
-              Ohne Check-in
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{needsCheckIn.length}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {overdueWithUrls.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold">Gießen überfällig</h2>
-          <div className="space-y-2">
-            {overdueWithUrls.map((plant) => (
-              <Link key={plant.id} href={`/plants/${plant.id}`}>
-                <Card className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="flex items-center gap-3 p-3">
-                    {plant.resolvedPhotoUrl ? (
-                      <img src={plant.resolvedPhotoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        <Leaf className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium">{plant.name}</p>
-                      <p className="text-xs text-muted-foreground">{plant.location}</p>
-                    </div>
-                    <Droplets className="h-4 w-4 text-yellow-500" />
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {needsCheckInWithUrls.length > 0 && (
-        <div className="space-y-2">
-          <h2 className="text-lg font-semibold">Heute noch kein Check-in</h2>
-          <div className="space-y-2">
-            {needsCheckInWithUrls.map((plant) => (
-              <Link key={plant.id} href={`/plants/${plant.id}`}>
-                <Card className="hover:bg-muted/50 transition-colors">
-                  <CardContent className="flex items-center gap-3 p-3">
-                    {plant.resolvedPhotoUrl ? (
-                      <img src={plant.resolvedPhotoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        <Leaf className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium">{plant.name}</p>
-                      <p className="text-xs text-muted-foreground">{plant.location}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {plantCount === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-10">
-            <Leaf className="h-12 w-12 text-muted-foreground/40" />
-            <p className="mt-4 text-lg font-medium">Noch keine Pflanzen</p>
-            <p className="mt-1 text-sm text-muted-foreground">Füge deine erste Pflanze hinzu!</p>
-            <Link href="/plants/new" className="mt-4">
-              <Button>
-                <Plus className="mr-1 h-4 w-4" />
-                Pflanze anlegen
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
+  return <DashboardClient data={data} />;
 }
