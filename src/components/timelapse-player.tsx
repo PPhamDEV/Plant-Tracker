@@ -20,13 +20,15 @@ interface TimelapsePlayerProps {
   onClose: () => void;
 }
 
-const SPEED_OPTIONS = [1, 2, 3] as const;
+const SPEED_OPTIONS = [1, 2, 3, 4, 5] as const;
 type Speed = (typeof SPEED_OPTIONS)[number];
 
 const INTERVAL_MS: Record<Speed, number> = {
   1: 2500,
   2: 1250,
   3: 800,
+  4: 500,
+  5: 300,
 };
 
 export function TimelapsePlayer({ photos: photosDesc, onClose }: TimelapsePlayerProps) {
@@ -35,7 +37,7 @@ export function TimelapsePlayer({ photos: photosDesc, onClose }: TimelapsePlayer
 
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(true);
-  const [speed, setSpeed] = useState<Speed>(1);
+  const [speed, setSpeed] = useState<Speed>(3);
   const [showControls, setShowControls] = useState(true);
   const [originalUrls, setOriginalUrls] = useState<Record<string, string>>({});
 
