@@ -8,8 +8,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { Leaf, MapPin, Calendar, Droplets, Sprout, Sun } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
-import { QuickActions } from "./quick-actions";
-import { CheckInForm } from "./check-in-form";
+import { PlantActions } from "./plant-actions";
 import { TimelineTab } from "./timeline-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -120,8 +119,8 @@ export default async function PlantDetailPage({ params }: Props) {
         {lastCheckIn && <StatusBadge status={lastCheckIn.status} />}
       </div>
 
-      {/* Quick Actions */}
-      <QuickActions plantId={plant.id} />
+      {/* Quick Actions + FAB + Bottom Sheet */}
+      <PlantActions plantId={plant.id} />
 
       {/* Info Cards */}
       <div className="grid grid-cols-3 gap-2 text-center">
@@ -242,9 +241,6 @@ export default async function PlantDetailPage({ params }: Props) {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Check-in Form */}
-      <CheckInForm plantId={plant.id} />
     </div>
   );
 }
