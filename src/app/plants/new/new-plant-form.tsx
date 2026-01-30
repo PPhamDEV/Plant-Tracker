@@ -58,7 +58,11 @@ export function NewPlantForm() {
     formData.set("photoId", photoId);
     try {
       await createPlant(formData);
-    } catch {
+    } catch (err) {
+      // redirect() throws a NEXT_REDIRECT error — let it propagate
+      if (err && typeof err === "object" && "digest" in err && typeof (err as { digest: unknown }).digest === "string" && (err as { digest: string }).digest.startsWith("NEXT_REDIRECT")) {
+        throw err;
+      }
       toast({ title: "Fehler", description: "Pflanze konnte nicht angelegt werden", variant: "destructive" });
       setPending(false);
     }
