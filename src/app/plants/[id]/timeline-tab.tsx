@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatusBadge } from "@/components/status-badge";
-import { Leaf, Camera, Info, Play, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Leaf, Camera, Play, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import {
@@ -114,7 +114,6 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [showTimelapse, setShowTimelapse] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [infoIds, setInfoIds] = useState<Set<string>>(new Set());
 
   const [editingCheckIn, setEditingCheckIn] = useState<SerializedCheckIn | null>(null);
   const [deletingCheckInId, setDeletingCheckInId] = useState<string | null>(null);
@@ -122,15 +121,6 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
 
   const toggleExpanded = useCallback((id: string) => {
     setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleInfo = useCallback((id: string) => {
-    setInfoIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -215,7 +205,6 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
           const hasPhoto = !!ci.resolvedPhotoUrl;
           const date = new Date(ci.date);
           const expanded = expandedIds.has(ci.id);
-          const showInfo = infoIds.has(ci.id);
 
           return (
             <motion.div
@@ -267,7 +256,7 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
                     </div>
                   )}
 
-                  {/* Status + date */}
+                  {/* Status + date + notes preview */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <StatusBadge status={ci.status} />
@@ -281,33 +270,12 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
                         locale: de,
                       })}
                     </span>
+                    {ci.notes && !expanded && (
+                      <span className="mt-0.5 block text-xs text-muted-foreground/70 truncate">
+                        {ci.notes}
+                      </span>
+                    )}
                   </div>
-
-                  {/* Info icon — only if notes exist */}
-                  {ci.notes && (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleInfo(ci.id);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.stopPropagation();
-                          toggleInfo(ci.id);
-                        }
-                      }}
-                      className={`shrink-0 rounded-full p-1.5 transition-colors ${
-                        showInfo
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground/40 hover:bg-muted hover:text-muted-foreground"
-                      }`}
-                      aria-label="Notizen anzeigen"
-                    >
-                      <Info className="h-4 w-4" />
-                    </div>
-                  )}
 
                   {/* Context menu */}
                   <ContextMenu
@@ -316,28 +284,9 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
                   />
                 </button>
 
-                {/* Notes — revealed by info icon */}
+                {/* Expanded content: notes + photo */}
                 <AnimatePresence>
-                  {showInfo && ci.notes && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="border-t px-3 py-2.5">
-                        <p className="text-sm leading-relaxed text-foreground/80">
-                          {ci.notes}
-                        </p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Expanded photo */}
-                <AnimatePresence>
-                  {expanded && ci.resolvedPhotoUrl && (
+                  {expanded && (ci.notes || ci.resolvedPhotoUrl) && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
@@ -345,23 +294,32 @@ export function TimelineTab({ checkIns, plantId }: TimelineTabProps) {
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden rounded-b-xl"
                     >
-                      <button
-                        type="button"
-                        onClick={() =>
-                          lbIndex !== undefined && setOpenIndex(lbIndex)
-                        }
-                        className="group relative block w-full focus:outline-none"
-                      >
-                        <img
-                          src={ci.resolvedPhotoUrl}
-                          alt=""
-                          className="aspect-[16/10] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
-                        <div className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white/80 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
-                          <Camera className="h-3.5 w-3.5" />
+                      {ci.notes && (
+                        <div className="border-t px-3 py-2.5">
+                          <p className="text-sm leading-relaxed text-foreground/80">
+                            {ci.notes}
+                          </p>
                         </div>
-                      </button>
+                      )}
+                      {ci.resolvedPhotoUrl && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            lbIndex !== undefined && setOpenIndex(lbIndex)
+                          }
+                          className="group relative block w-full focus:outline-none"
+                        >
+                          <img
+                            src={ci.resolvedPhotoUrl}
+                            alt=""
+                            className="aspect-[16/10] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          />
+                          <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+                          <div className="absolute bottom-2 right-2 rounded-full bg-black/40 p-1.5 text-white/80 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
+                            <Camera className="h-3.5 w-3.5" />
+                          </div>
+                        </button>
+                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
