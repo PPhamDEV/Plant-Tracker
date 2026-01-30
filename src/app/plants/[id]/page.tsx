@@ -10,6 +10,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { QuickActions } from "./quick-actions";
 import { CheckInForm } from "./check-in-form";
+import { TimelineTab } from "./timeline-tab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const dynamic = "force-dynamic";
@@ -66,6 +67,7 @@ export default async function PlantDetailPage({ params }: Props) {
     plant.checkIns.map(async (ci) => ({
       ...ci,
       resolvedPhotoUrl: await resolvePhotoUrl(ci.photo, ci.photoUrl, "thumb"),
+      photoId: ci.photo?.id ?? null,
     }))
   );
 
@@ -183,36 +185,16 @@ export default async function PlantDetailPage({ params }: Props) {
         </TabsList>
 
         <TabsContent value="timeline">
-          {checkInsWithUrls.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Check-ins.</p>
-          ) : (
-            <div className="space-y-3">
-              {checkInsWithUrls.map((ci) => (
-                <Card key={ci.id}>
-                  <CardContent className="p-3">
-                    <div className="flex items-start gap-3">
-                      {ci.resolvedPhotoUrl ? (
-                        <img src={ci.resolvedPhotoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-                          <Leaf className="h-6 w-6 text-muted-foreground/40" />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <StatusBadge status={ci.status} />
-                          <span className="text-xs text-muted-foreground">
-                            {format(ci.date, "dd.MM.yyyy HH:mm", { locale: de })}
-                          </span>
-                        </div>
-                        {ci.notes && <p className="mt-1 text-sm">{ci.notes}</p>}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          <TimelineTab
+            checkIns={checkInsWithUrls.map((ci) => ({
+              id: ci.id,
+              date: ci.date.toISOString(),
+              status: ci.status,
+              notes: ci.notes,
+              resolvedPhotoUrl: ci.resolvedPhotoUrl,
+              photoId: ci.photoId,
+            }))}
+          />
         </TabsContent>
 
         <TabsContent value="watering">
