@@ -3,13 +3,14 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StatusBadge } from "@/components/status-badge";
-import { Leaf, Camera, Info } from "lucide-react";
+import { Leaf, Camera, Info, Play } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import {
   TimelineLightbox,
   type LightboxPhoto,
 } from "@/components/timeline-lightbox";
+import { TimelapsePlayer } from "@/components/timelapse-player";
 
 export interface SerializedCheckIn {
   id: string;
@@ -26,6 +27,7 @@ interface TimelineTabProps {
 
 export function TimelineTab({ checkIns }: TimelineTabProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [showTimelapse, setShowTimelapse] = useState(false);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [infoIds, setInfoIds] = useState<Set<string>>(new Set());
 
@@ -77,6 +79,19 @@ export function TimelineTab({ checkIns }: TimelineTabProps) {
 
   return (
     <>
+      {photosForLightbox.length >= 2 && (
+        <div className="flex justify-end pb-2">
+          <button
+            type="button"
+            onClick={() => setShowTimelapse(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Timelapse
+          </button>
+        </div>
+      )}
+
       <div className="relative pl-8 pt-2">
         {/* Vertical timeline line */}
         <div className="absolute left-[11px] top-4 bottom-0 w-px bg-border" />
@@ -241,6 +256,13 @@ export function TimelineTab({ checkIns }: TimelineTabProps) {
           photos={photosForLightbox}
           initialIndex={openIndex}
           onClose={() => setOpenIndex(null)}
+        />
+      )}
+
+      {showTimelapse && photosForLightbox.length >= 2 && (
+        <TimelapsePlayer
+          photos={photosForLightbox}
+          onClose={() => setShowTimelapse(false)}
         />
       )}
     </>
