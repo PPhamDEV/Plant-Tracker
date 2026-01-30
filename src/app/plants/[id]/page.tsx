@@ -202,7 +202,7 @@ export default async function PlantDetailPage({ params }: Props) {
                         <div className="flex items-center gap-2">
                           <StatusBadge status={ci.status} />
                           <span className="text-xs text-muted-foreground">
-                            {format(ci.date, "dd.MM.yyyy", { locale: de })}
+                            {format(ci.date, "dd.MM.yyyy HH:mm", { locale: de })}
                           </span>
                         </div>
                         {ci.notes && <p className="mt-1 text-sm">{ci.notes}</p>}

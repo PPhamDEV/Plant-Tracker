@@ -9,12 +9,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/toast";
 import { Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 export function CheckInForm({ plantId }: { plantId: string }) {
   const [photoId, setPhotoId] = useState("");
   const [pending, setPending] = useState(false);
-  const formRef = useRef<HTMLFormElement>(null);
+  const [formKey, setFormKey] = useState(0);
   const { toast } = useToast();
 
   async function handleSubmit(formData: FormData) {
@@ -24,8 +24,8 @@ export function CheckInForm({ plantId }: { plantId: string }) {
     try {
       await createCheckIn(formData);
       toast({ title: "Check-in gespeichert" });
-      formRef.current?.reset();
       setPhotoId("");
+      setFormKey((k) => k + 1);
     } catch {
       toast({ title: "Fehler", description: "Check-in fehlgeschlagen", variant: "destructive" });
     } finally {
@@ -39,7 +39,7 @@ export function CheckInForm({ plantId }: { plantId: string }) {
         <CardTitle className="text-base">Neuer Check-in</CardTitle>
       </CardHeader>
       <CardContent>
-        <form ref={formRef} action={handleSubmit} className="space-y-3">
+        <form key={formKey} action={handleSubmit} className="space-y-3">
           <PhotoUpload onUpload={setPhotoId} plantId={plantId} />
 
           <div>
