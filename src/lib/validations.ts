@@ -36,6 +36,12 @@ export const createCheckInSchema = z.object({
 
 export type CreateCheckInInput = z.infer<typeof createCheckInSchema>;
 
+export const updateCheckInSchema = z.object({
+  checkInId: z.string().min(1),
+  status: z.enum(["ok", "thirsty", "pests", "repotted", "sick", "growing"]),
+  notes: z.string().optional(),
+});
+
 export const createWateringSchema = z.object({
   plantId: z.string().min(1),
   notes: z.string().optional(),

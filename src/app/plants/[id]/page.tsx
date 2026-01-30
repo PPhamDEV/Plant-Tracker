@@ -185,6 +185,7 @@ export default async function PlantDetailPage({ params }: Props) {
 
         <TabsContent value="timeline">
           <TimelineTab
+            plantId={plant.id}
             checkIns={checkInsWithUrls.map((ci) => ({
               id: ci.id,
               date: ci.date.toISOString(),
