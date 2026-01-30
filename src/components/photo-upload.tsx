@@ -6,30 +6,75 @@ import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 
 interface PhotoUploadProps {
-  onUpload: (url: string) => void;
+  onUpload: (photoId: string) => void;
+  plantId?: string;
   currentUrl?: string;
   className?: string;
 }
 
-export function PhotoUpload({ onUpload, currentUrl, className }: PhotoUploadProps) {
+export function PhotoUpload({
+  onUpload,
+  plantId,
+  currentUrl,
+  className,
+}: PhotoUploadProps) {
   const [preview, setPreview] = useState<string | null>(currentUrl || null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   async function handleFile(file: File) {
     setUploading(true);
+    setError(null);
+    // Instant local preview
+    const localUrl = URL.createObjectURL(file);
+    setPreview(localUrl);
+
     try {
-      const formData = new FormData();
-      formData.append("file", file);
+      // 1. Get presigned upload URL
+      const presignRes = await fetch("/api/photos/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          plantId: plantId || undefined,
+        }),
+      });
+      if (!presignRes.ok) {
+        const data = await presignRes.json();
+        throw new Error(data.error || "Presign fehlgeschlagen");
+      }
+      const { uploadUrl, photoId } = await presignRes.json();
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Upload fehlgeschlagen");
+      // 2. Upload directly to S3/MinIO
+      const uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!uploadRes.ok) {
+        throw new Error("Upload zu S3 fehlgeschlagen");
+      }
 
-      const data = await res.json();
-      setPreview(data.url);
-      onUpload(data.url);
+      // 3. Confirm upload (triggers thumbnail generation)
+      const confirmRes = await fetch("/api/photos/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId }),
+      });
+      if (!confirmRes.ok) {
+        const data = await confirmRes.json();
+        throw new Error(data.error || "Bestätigung fehlgeschlagen");
+      }
+
+      onUpload(photoId);
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Upload fehlgeschlagen");
+      setPreview(null);
+      URL.revokeObjectURL(localUrl);
     } finally {
       setUploading(false);
     }
@@ -41,7 +86,11 @@ export function PhotoUpload({ onUpload, currentUrl, className }: PhotoUploadProp
   }
 
   function clear() {
+    if (preview && preview.startsWith("blob:")) {
+      URL.revokeObjectURL(preview);
+    }
     setPreview(null);
+    setError(null);
     onUpload("");
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -63,12 +112,19 @@ export function PhotoUpload({ onUpload, currentUrl, className }: PhotoUploadProp
             alt="Vorschau"
             className="h-48 w-full rounded-lg object-cover"
           />
-          <button
-            onClick={clear}
-            className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
-          >
-            <X className="h-4 w-4" />
-          </button>
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            </div>
+          )}
+          {!uploading && (
+            <button
+              onClick={clear}
+              className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white hover:bg-black/80"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ) : (
         <div
@@ -80,10 +136,16 @@ export function PhotoUpload({ onUpload, currentUrl, className }: PhotoUploadProp
           ) : (
             <>
               <Camera className="h-8 w-8 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Foto aufnehmen oder hochladen</span>
+              <span className="text-sm text-muted-foreground">
+                Foto aufnehmen oder hochladen
+              </span>
             </>
           )}
         </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-destructive">{error}</p>
       )}
 
       {!preview && !uploading && (

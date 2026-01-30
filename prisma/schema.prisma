@@ -16,31 +16,35 @@ model User {
   updatedAt DateTime @updatedAt
 
   plants Plant[]
+  photos PlantPhoto[]
 
   @@map("users")
 }
 
 model Plant {
-  id                    String    @id @default(cuid())
-  userId                String
-  name                  String    @default("Unbekannt")
-  species               String?
-  variety               String?
-  purchaseDate          DateTime  @default(now())
-  location              String    @default("Unbekannt")
-  notes                 String?
-  origin                String?
-  price                 Float?
-  substrate             String?
-  potSize               String?
-  lightCondition        String?
-  wateringIntervalDays  Int?
+  id                      String    @id @default(cuid())
+  userId                  String
+  name                    String    @default("Unbekannt")
+  species                 String?
+  variety                 String?
+  purchaseDate            DateTime  @default(now())
+  location                String    @default("Unbekannt")
+  notes                   String?
+  origin                  String?
+  price                   Float?
+  substrate               String?
+  potSize                 String?
+  lightCondition          String?
+  wateringIntervalDays    Int?
   fertilizingIntervalDays Int?
-  photoUrl              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  photoUrl                String?   // Legacy: local file path
+  photoId                 String?   @unique
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  photo             PlantPhoto?        @relation("ProfilePhoto", fields: [photoId], references: [id], onDelete: SetNull)
+  photos            PlantPhoto[]       @relation("PlantPhotos")
   checkIns          PlantCheckIn[]
   wateringEvents    WateringEvent[]
   fertilizingEvents FertilizingEvent[]
@@ -50,16 +54,43 @@ model Plant {
   @@map("plants")
 }
 
+model PlantPhoto {
+  id                String   @id @default(cuid())
+  userId            String
+  plantId           String?
+  objectKeyOriginal String
+  objectKeyThumb    String?
+  mimeType          String
+  sizeBytes         Int?
+  width             Int?
+  height            Int?
+  hash              String?
+  status            String   @default("pending") // pending, confirmed
+  takenAt           DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plant     Plant?         @relation("PlantPhotos", fields: [plantId], references: [id], onDelete: SetNull)
+  profileOf Plant?         @relation("ProfilePhoto")
+  checkInOf PlantCheckIn?  @relation("CheckInPhoto")
+
+  @@index([userId])
+  @@index([plantId])
+  @@map("plant_photos")
+}
+
 model PlantCheckIn {
   id        String   @id @default(cuid())
   plantId   String
-  photoUrl  String?
+  photoUrl  String?  // Legacy: local file path
+  photoId   String?  @unique
   notes     String?
   status    String   @default("ok") // ok, thirsty, pests, repotted, sick, growing
   date      DateTime @default(now())
   createdAt DateTime @default(now())
 
-  plant Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  plant Plant      @relation(fields: [plantId], references: [id], onDelete: Cascade)
+  photo PlantPhoto? @relation("CheckInPhoto", fields: [photoId], references: [id], onDelete: SetNull)
 
   @@index([plantId])
   @@index([date])
@@ -82,12 +113,12 @@ model WateringEvent {
 }
 
 model FertilizingEvent {
-  id        String   @id @default(cuid())
-  plantId   String
-  date      DateTime @default(now())
-  notes     String?
+  id         String   @id @default(cuid())
+  plantId    String
+  date       DateTime @default(now())
+  notes      String?
   fertilizer String?
-  createdAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   plant Plant @relation(fields: [plantId], references: [id], onDelete: Cascade)
 

@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 import { useRef, useState } from "react";
 
 export function CheckInForm({ plantId }: { plantId: string }) {
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoId, setPhotoId] = useState("");
   const [pending, setPending] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
@@ -20,12 +20,12 @@ export function CheckInForm({ plantId }: { plantId: string }) {
   async function handleSubmit(formData: FormData) {
     setPending(true);
     formData.set("plantId", plantId);
-    formData.set("photoUrl", photoUrl);
+    formData.set("photoId", photoId);
     try {
       await createCheckIn(formData);
       toast({ title: "Check-in gespeichert" });
       formRef.current?.reset();
-      setPhotoUrl("");
+      setPhotoId("");
     } catch {
       toast({ title: "Fehler", description: "Check-in fehlgeschlagen", variant: "destructive" });
     } finally {
@@ -40,7 +40,7 @@ export function CheckInForm({ plantId }: { plantId: string }) {
       </CardHeader>
       <CardContent>
         <form ref={formRef} action={handleSubmit} className="space-y-3">
-          <PhotoUpload onUpload={setPhotoUrl} />
+          <PhotoUpload onUpload={setPhotoId} plantId={plantId} />
 
           <div>
             <Label htmlFor="status">Status</Label>

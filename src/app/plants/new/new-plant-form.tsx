@@ -19,7 +19,7 @@ interface IdentResult {
 }
 
 export function NewPlantForm() {
-  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoId, setPhotoId] = useState("");
   const [identResults, setIdentResults] = useState<IdentResult[]>([]);
   const [identifying, setIdentifying] = useState(false);
   const [pending, setPending] = useState(false);
@@ -27,16 +27,10 @@ export function NewPlantForm() {
   const { toast } = useToast();
 
   async function handleIdentify() {
-    if (!photoUrl) return;
+    if (!photoId) return;
     setIdentifying(true);
     try {
-      // Fetch the uploaded image and send it for identification
-      const imgRes = await fetch(photoUrl);
-      const blob = await imgRes.blob();
-      const formData = new FormData();
-      formData.append("file", blob, "photo.jpg");
-
-      const res = await fetch("/api/identify-plant", { method: "POST", body: formData });
+      const res = await fetch(`/api/identify-plant?photoId=${photoId}`);
       const data = await res.json();
       if (data.results) {
         setIdentResults(data.results);
@@ -61,7 +55,7 @@ export function NewPlantForm() {
 
   async function handleSubmit(formData: FormData) {
     setPending(true);
-    formData.set("photoUrl", photoUrl);
+    formData.set("photoId", photoId);
     try {
       await createPlant(formData);
     } catch {
@@ -77,8 +71,8 @@ export function NewPlantForm() {
           <CardTitle>Foto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <PhotoUpload onUpload={setPhotoUrl} />
-          {photoUrl && (
+          <PhotoUpload onUpload={setPhotoId} />
+          {photoId && (
             <Button
               type="button"
               variant="outline"
@@ -168,7 +162,7 @@ export function NewPlantForm() {
               <Input id="origin" name="origin" placeholder="z.B. Baumarkt" />
             </div>
             <div>
-              <Label htmlFor="price">Preis (€)</Label>
+              <Label htmlFor="price">Preis</Label>
               <Input id="price" name="price" type="number" step="0.01" min="0" />
             </div>
           </div>
@@ -205,7 +199,7 @@ export function NewPlantForm() {
         </CardContent>
       </Card>
 
-      <input type="hidden" name="photoUrl" value={photoUrl} />
+      <input type="hidden" name="photoId" value={photoId} />
 
       <Button type="submit" className="w-full" disabled={pending}>
         {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}

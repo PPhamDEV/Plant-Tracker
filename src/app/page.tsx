@@ -1,10 +1,25 @@
 import { db } from "@/lib/db";
+import { createPresignedReadUrl } from "@/lib/s3";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Leaf, Droplets, CalendarCheck, AlertTriangle, Plus } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+type PlantWithWatering = Awaited<ReturnType<typeof db.plant.findMany<{
+  include: { photo: true; wateringEvents: { orderBy: { date: "desc" }; take: 1 } };
+}>>>[number];
+
+async function resolvePlantPhotoUrl(plant: PlantWithWatering): Promise<string | null> {
+  if (plant.photo) {
+    const key = plant.photo.objectKeyThumb || plant.photo.objectKeyOriginal;
+    try {
+      return await createPresignedReadUrl(key);
+    } catch { /* ignore */ }
+  }
+  return plant.photoUrl || null;
+}
 
 async function getDashboardData() {
   try {
@@ -16,6 +31,7 @@ async function getDashboardData() {
       db.plantCheckIn.count({ where: { date: { gte: todayStart } } }),
       db.plant.findMany({
         include: {
+          photo: true,
           wateringEvents: { orderBy: { date: "desc" }, take: 1 },
         },
       }),
@@ -40,12 +56,26 @@ async function getDashboardData() {
 
     return { plantCount, todayCheckIns, overdueWatering, needsCheckIn };
   } catch {
-    return { plantCount: 0, todayCheckIns: 0, overdueWatering: [], needsCheckIn: [] };
+    return { plantCount: 0, todayCheckIns: 0, overdueWatering: [] as PlantWithWatering[], needsCheckIn: [] as PlantWithWatering[] };
   }
 }
 
 export default async function DashboardPage() {
   const { plantCount, todayCheckIns, overdueWatering, needsCheckIn } = await getDashboardData();
+
+  // Resolve photo URLs
+  const overdueWithUrls = await Promise.all(
+    overdueWatering.slice(0, 5).map(async (p) => ({
+      ...p,
+      resolvedPhotoUrl: await resolvePlantPhotoUrl(p),
+    }))
+  );
+  const needsCheckInWithUrls = await Promise.all(
+    needsCheckIn.slice(0, 5).map(async (p) => ({
+      ...p,
+      resolvedPhotoUrl: await resolvePlantPhotoUrl(p),
+    }))
+  );
 
   return (
     <div className="space-y-6">
@@ -111,16 +141,16 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {overdueWatering.length > 0 && (
+      {overdueWithUrls.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Gießen überfällig</h2>
           <div className="space-y-2">
-            {overdueWatering.slice(0, 5).map((plant) => (
+            {overdueWithUrls.map((plant) => (
               <Link key={plant.id} href={`/plants/${plant.id}`}>
                 <Card className="hover:bg-muted/50 transition-colors">
                   <CardContent className="flex items-center gap-3 p-3">
-                    {plant.photoUrl ? (
-                      <img src={plant.photoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    {plant.resolvedPhotoUrl ? (
+                      <img src={plant.resolvedPhotoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
                         <Leaf className="h-5 w-5 text-muted-foreground" />
@@ -139,16 +169,16 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      {needsCheckIn.length > 0 && (
+      {needsCheckInWithUrls.length > 0 && (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold">Heute noch kein Check-in</h2>
           <div className="space-y-2">
-            {needsCheckIn.slice(0, 5).map((plant) => (
+            {needsCheckInWithUrls.map((plant) => (
               <Link key={plant.id} href={`/plants/${plant.id}`}>
                 <Card className="hover:bg-muted/50 transition-colors">
                   <CardContent className="flex items-center gap-3 p-3">
-                    {plant.photoUrl ? (
-                      <img src={plant.photoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    {plant.resolvedPhotoUrl ? (
+                      <img src={plant.resolvedPhotoUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
                     ) : (
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
                         <Leaf className="h-5 w-5 text-muted-foreground" />

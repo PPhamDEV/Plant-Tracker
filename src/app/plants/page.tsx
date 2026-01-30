@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { createPresignedReadUrl } from "@/lib/s3";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,12 @@ export default async function PlantsPage({ searchParams }: Props) {
   const params = await searchParams;
   const { q, location, sort } = params;
 
-  let plants: Awaited<ReturnType<typeof db.plant.findMany<{ include: { checkIns: { orderBy: { date: "desc" }; take: 1 } } }>>> = [];
+  let plants: Awaited<ReturnType<typeof db.plant.findMany<{
+    include: {
+      photo: true;
+      checkIns: { orderBy: { date: "desc" }; take: 1 };
+    };
+  }>>> = [];
   try {
     plants = await db.plant.findMany({
       where: {
@@ -27,6 +33,7 @@ export default async function PlantsPage({ searchParams }: Props) {
         ...(location ? { location } : {}),
       },
       include: {
+        photo: true,
         checkIns: { orderBy: { date: "desc" }, take: 1 },
       },
       orderBy: sort === "name"
@@ -38,6 +45,22 @@ export default async function PlantsPage({ searchParams }: Props) {
   } catch {
     plants = [];
   }
+
+  // Resolve photo URLs for all plants
+  const plantsWithUrls = await Promise.all(
+    plants.map(async (plant) => {
+      let resolvedPhotoUrl: string | null = null;
+      if (plant.photo) {
+        const key = plant.photo.objectKeyThumb || plant.photo.objectKeyOriginal;
+        try {
+          resolvedPhotoUrl = await createPresignedReadUrl(key);
+        } catch { /* ignore */ }
+      } else if (plant.photoUrl) {
+        resolvedPhotoUrl = plant.photoUrl;
+      }
+      return { ...plant, resolvedPhotoUrl };
+    })
+  );
 
   let locations: string[] = [];
   try {
@@ -61,7 +84,7 @@ export default async function PlantsPage({ searchParams }: Props) {
 
       <PlantListFilter locations={locations} currentLocation={location} currentSort={sort} currentQuery={q} />
 
-      {plants.length === 0 ? (
+      {plantsWithUrls.length === 0 ? (
         <EmptyState
           icon={Leaf}
           title="Keine Pflanzen gefunden"
@@ -78,15 +101,15 @@ export default async function PlantsPage({ searchParams }: Props) {
         </EmptyState>
       ) : (
         <div className="space-y-2">
-          {plants.map((plant) => {
+          {plantsWithUrls.map((plant) => {
             const lastCheckIn = plant.checkIns[0];
             return (
               <Link key={plant.id} href={`/plants/${plant.id}`}>
                 <Card className="hover:bg-muted/50 transition-colors">
                   <CardContent className="flex items-center gap-3 p-3">
-                    {plant.photoUrl ? (
+                    {plant.resolvedPhotoUrl ? (
                       <img
-                        src={plant.photoUrl}
+                        src={plant.resolvedPhotoUrl}
                         alt={plant.name}
                         className="h-14 w-14 rounded-lg object-cover"
                       />

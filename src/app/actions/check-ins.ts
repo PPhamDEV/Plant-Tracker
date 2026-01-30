@@ -13,6 +13,7 @@ export async function createCheckIn(formData: FormData) {
   };
 
   const data = createCheckInSchema.parse(raw);
+  const photoId = (formData.get("photoId") as string) || undefined;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -33,7 +34,8 @@ export async function createCheckIn(formData: FormData) {
       data: {
         status: data.status,
         notes: data.notes,
-        photoUrl: data.photoUrl,
+        photoUrl: photoId ? undefined : data.photoUrl,
+        photoId: photoId || undefined,
       },
     });
   } else {
@@ -42,9 +44,18 @@ export async function createCheckIn(formData: FormData) {
         plantId: data.plantId,
         status: data.status,
         notes: data.notes,
-        photoUrl: data.photoUrl,
+        photoUrl: photoId ? undefined : data.photoUrl,
+        photoId: photoId || undefined,
         date: today,
       },
+    });
+  }
+
+  // Associate photo with plant if not already
+  if (photoId) {
+    await db.plantPhoto.update({
+      where: { id: photoId },
+      data: { plantId: data.plantId },
     });
   }
 

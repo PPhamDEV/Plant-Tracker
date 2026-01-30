@@ -38,3 +38,35 @@ export const createFertilizingSchema = z.object({
   notes: z.string().optional(),
   fertilizer: z.string().optional(),
 });
+
+// Photo upload schemas
+
+const ALLOWED_PHOTO_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+] as const;
+
+const MAX_PHOTO_SIZE = 10 * 1024 * 1024; // 10MB
+
+export const presignRequestSchema = z.object({
+  fileName: z.string().min(1),
+  fileType: z.enum(ALLOWED_PHOTO_TYPES, {
+    message: "Dateityp nicht erlaubt",
+  }),
+  fileSize: z.number().int().positive().max(MAX_PHOTO_SIZE, "Datei zu groß (max 10MB)"),
+  plantId: z.string().optional(),
+  takenAt: z.string().optional(),
+});
+
+export type PresignRequest = z.infer<typeof presignRequestSchema>;
+
+export const confirmPhotoSchema = z.object({
+  photoId: z.string().min(1),
+});
+
+export const batchPhotoUrlsSchema = z.object({
+  photoIds: z.array(z.string().min(1)).min(1).max(100),
+  size: z.enum(["thumb", "original"]).default("thumb"),
+});

@@ -27,6 +27,7 @@ export async function createPlant(formData: FormData) {
   };
 
   const data = createPlantSchema.parse(raw);
+  const photoId = (formData.get("photoId") as string) || undefined;
 
   const plant = await db.plant.create({
     data: {
@@ -44,9 +45,18 @@ export async function createPlant(formData: FormData) {
       lightCondition: data.lightCondition,
       wateringIntervalDays: data.wateringIntervalDays,
       fertilizingIntervalDays: data.fertilizingIntervalDays,
-      photoUrl: data.photoUrl,
+      photoUrl: photoId ? undefined : data.photoUrl,
+      photoId: photoId || undefined,
     },
   });
+
+  // Associate the PlantPhoto with this plant
+  if (photoId) {
+    await db.plantPhoto.update({
+      where: { id: photoId },
+      data: { plantId: plant.id },
+    });
+  }
 
   revalidatePath("/");
   revalidatePath("/plants");

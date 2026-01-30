@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { createPresignedReadUrl } from "@/lib/s3";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,19 +17,55 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+/** Resolve photo to a displayable URL (S3 signed or legacy local) */
+async function resolvePhotoUrl(
+  photo: { objectKeyThumb: string | null; objectKeyOriginal: string } | null,
+  legacyUrl: string | null | undefined,
+  size: "thumb" | "original" = "thumb"
+): Promise<string | null> {
+  if (photo) {
+    const key =
+      size === "original" || !photo.objectKeyThumb
+        ? photo.objectKeyOriginal
+        : photo.objectKeyThumb;
+    try {
+      return await createPresignedReadUrl(key);
+    } catch {
+      return null;
+    }
+  }
+  return legacyUrl || null;
+}
+
 export default async function PlantDetailPage({ params }: Props) {
   const { id } = await params;
 
   const plant = await db.plant.findUnique({
     where: { id },
     include: {
-      checkIns: { orderBy: { date: "desc" }, take: 50 },
+      photo: true,
+      checkIns: {
+        orderBy: { date: "desc" },
+        take: 50,
+        include: { photo: true },
+      },
       wateringEvents: { orderBy: { date: "desc" }, take: 20 },
       fertilizingEvents: { orderBy: { date: "desc" }, take: 20 },
     },
   });
 
   if (!plant) notFound();
+
+  // Resolve hero image
+  const heroUrl = await resolvePhotoUrl(plant.photo, plant.photoUrl, "thumb");
+
+  // Resolve check-in photo URLs
+  const checkInsWithUrls = await Promise.all(
+    plant.checkIns.map(async (ci) => ({
+      ...ci,
+      resolvedPhotoUrl: await resolvePhotoUrl(ci.photo, ci.photoUrl, "thumb"),
+    }))
+  );
 
   const daysSincePurchase = Math.floor(
     (Date.now() - plant.purchaseDate.getTime()) / (1000 * 60 * 60 * 24)
@@ -41,9 +78,9 @@ export default async function PlantDetailPage({ params }: Props) {
     <div className="space-y-4">
       {/* Hero */}
       <div className="relative">
-        {plant.photoUrl ? (
+        {heroUrl ? (
           <img
-            src={plant.photoUrl}
+            src={heroUrl}
             alt={plant.name}
             className="h-56 w-full rounded-xl object-cover"
           />
@@ -144,16 +181,16 @@ export default async function PlantDetailPage({ params }: Props) {
         </TabsList>
 
         <TabsContent value="timeline">
-          {plant.checkIns.length === 0 ? (
+          {checkInsWithUrls.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">Noch keine Check-ins.</p>
           ) : (
             <div className="space-y-3">
-              {plant.checkIns.map((ci) => (
+              {checkInsWithUrls.map((ci) => (
                 <Card key={ci.id}>
                   <CardContent className="p-3">
                     <div className="flex items-start gap-3">
-                      {ci.photoUrl ? (
-                        <img src={ci.photoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />
+                      {ci.resolvedPhotoUrl ? (
+                        <img src={ci.resolvedPhotoUrl} alt="" className="h-16 w-16 rounded-lg object-cover" />
                       ) : (
                         <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
                           <Leaf className="h-6 w-6 text-muted-foreground/40" />
