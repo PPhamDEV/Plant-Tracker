@@ -94,7 +94,6 @@ model PlantCheckIn {
 
   @@index([plantId])
   @@index([date])
-  @@unique([plantId, date])
   @@map("plant_check_ins")
 }
 

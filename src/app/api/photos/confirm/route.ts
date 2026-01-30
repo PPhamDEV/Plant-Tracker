@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     let height: number | undefined;
     try {
       const originalBuffer = await downloadObject(photo.objectKeyOriginal);
-      const image = sharp(originalBuffer);
+      const image = sharp(originalBuffer).rotate(); // auto-rotate based on EXIF orientation
       const metadata = await image.metadata();
       width = metadata.width;
       height = metadata.height;

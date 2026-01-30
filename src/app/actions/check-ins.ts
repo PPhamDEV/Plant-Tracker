@@ -25,41 +25,15 @@ export async function createCheckIn(formData: FormData) {
 
   const photoId = (formData.get("photoId") as string) || undefined;
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  // Upsert: one check-in per plant per day
-  const existing = await db.plantCheckIn.findUnique({
-    where: {
-      plantId_date: {
-        plantId: data.plantId,
-        date: today,
-      },
+  await db.plantCheckIn.create({
+    data: {
+      plantId: data.plantId,
+      status: data.status,
+      notes: data.notes,
+      photoUrl: photoId ? undefined : data.photoUrl,
+      photoId: photoId || undefined,
     },
   });
-
-  if (existing) {
-    await db.plantCheckIn.update({
-      where: { id: existing.id },
-      data: {
-        status: data.status,
-        notes: data.notes,
-        photoUrl: photoId ? undefined : data.photoUrl,
-        photoId: photoId || undefined,
-      },
-    });
-  } else {
-    await db.plantCheckIn.create({
-      data: {
-        plantId: data.plantId,
-        status: data.status,
-        notes: data.notes,
-        photoUrl: photoId ? undefined : data.photoUrl,
-        photoId: photoId || undefined,
-        date: today,
-      },
-    });
-  }
 
   // Associate photo with plant if not already
   if (photoId) {
