@@ -1,5 +1,13 @@
 import { z } from "zod";
 
+export const registerSchema = z.object({
+  name: z.string().min(1, "Name ist erforderlich"),
+  email: z.string().email("Ungültige E-Mail-Adresse"),
+  password: z.string().min(8, "Passwort muss mindestens 8 Zeichen lang sein"),
+});
+
+export type RegisterInput = z.infer<typeof registerSchema>;
+
 export const createPlantSchema = z.object({
   name: z.string().min(1, "Name ist erforderlich").default("Unbekannt"),
   species: z.string().optional(),

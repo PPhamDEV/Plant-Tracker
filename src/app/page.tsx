@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getCurrentUserId } from "@/lib/user";
 import { createPresignedReadUrl } from "@/lib/s3";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,13 +24,15 @@ async function resolvePlantPhotoUrl(plant: PlantWithWatering): Promise<string | 
 
 async function getDashboardData() {
   try {
+    const userId = await getCurrentUserId();
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const [plantCount, todayCheckIns, plants] = await Promise.all([
-      db.plant.count(),
-      db.plantCheckIn.count({ where: { date: { gte: todayStart } } }),
+      db.plant.count({ where: { userId } }),
+      db.plantCheckIn.count({ where: { date: { gte: todayStart }, plant: { userId } } }),
       db.plant.findMany({
+        where: { userId },
         include: {
           photo: true,
           wateringEvents: { orderBy: { date: "desc" }, take: 1 },
@@ -48,7 +51,7 @@ async function getDashboardData() {
 
     // Plants needing check-in (no check-in today)
     const plantsWithCheckIn = await db.plantCheckIn.findMany({
-      where: { date: { gte: todayStart } },
+      where: { date: { gte: todayStart }, plant: { userId } },
       select: { plantId: true },
     });
     const checkedInIds = new Set(plantsWithCheckIn.map((c) => c.plantId));

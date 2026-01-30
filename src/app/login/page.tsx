@@ -8,6 +8,7 @@ import { Leaf } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -52,6 +53,12 @@ export default function LoginPage() {
               Anmelden
             </Button>
           </form>
+          <p className="mt-4 text-center text-sm text-muted-foreground">
+            Noch kein Konto?{" "}
+            <Link href="/register" className="text-primary hover:underline">
+              Registrieren
+            </Link>
+          </p>
         </CardContent>
       </Card>
     </div>

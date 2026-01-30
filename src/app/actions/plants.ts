@@ -1,13 +1,13 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { getDefaultUserId } from "@/lib/user";
+import { getCurrentUserId } from "@/lib/user";
 import { createPlantSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createPlant(formData: FormData) {
-  const userId = await getDefaultUserId();
+  const userId = await getCurrentUserId();
 
   const raw = {
     name: formData.get("name") as string,
@@ -64,6 +64,13 @@ export async function createPlant(formData: FormData) {
 }
 
 export async function deletePlant(plantId: string) {
+  const userId = await getCurrentUserId();
+
+  const plant = await db.plant.findUnique({ where: { id: plantId } });
+  if (!plant || plant.userId !== userId) {
+    throw new Error("Pflanze nicht gefunden oder keine Berechtigung");
+  }
+
   await db.plant.delete({ where: { id: plantId } });
   revalidatePath("/");
   revalidatePath("/plants");

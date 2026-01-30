@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Leaf, Plus } from "lucide-react";
+import { signOut } from "next-auth/react";
+import { Home, Leaf, Plus, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -13,6 +14,10 @@ const links = [
 
 export function BottomNav() {
   const pathname = usePathname();
+
+  if (pathname === "/login" || pathname === "/register") {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
@@ -33,6 +38,13 @@ export function BottomNav() {
             </Link>
           );
         })}
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="flex flex-col items-center gap-1 px-4 py-3 text-xs text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <LogOut className="h-5 w-5" />
+          <span>Abmelden</span>
+        </button>
       </div>
     </nav>
   );

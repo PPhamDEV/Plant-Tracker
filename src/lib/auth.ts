@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -11,27 +12,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (process.env.SINGLE_USER_MODE === "true") {
-          // In single-user mode, auto-create/find a default user
-          let user = await db.user.findFirst();
-          if (!user) {
-            user = await db.user.create({
-              data: {
-                email: "admin@plant-tracker.local",
-                password: "not-used",
-                name: "Admin",
-              },
-            });
-          }
-          return { id: user.id, email: user.email, name: user.name };
-        }
-
         const email = credentials?.email as string;
         const password = credentials?.password as string;
         if (!email || !password) return null;
 
         const user = await db.user.findUnique({ where: { email } });
-        if (!user || user.password !== password) return null;
+        if (!user) return null;
+
+        const valid = await bcrypt.compare(password, user.password);
+        if (!valid) return null;
 
         return { id: user.id, email: user.email, name: user.name };
       },
@@ -42,6 +31,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
+    authorized({ auth }) {
+      return !!auth;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;

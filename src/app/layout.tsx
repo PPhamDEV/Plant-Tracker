@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { BottomNav } from "@/components/nav";
+import { AuthSessionProvider } from "@/components/session-provider";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
@@ -32,10 +33,12 @@ export default function RootLayout({
   return (
     <html lang="de" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <ToastProvider>
-          <main className="mx-auto max-w-2xl px-4 pb-20 pt-6">{children}</main>
-          <BottomNav />
-        </ToastProvider>
+        <AuthSessionProvider>
+          <ToastProvider>
+            <main className="mx-auto max-w-2xl px-4 pb-20 pt-6">{children}</main>
+            <BottomNav />
+          </ToastProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

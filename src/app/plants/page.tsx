@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getCurrentUserId } from "@/lib/user";
 import { createPresignedReadUrl } from "@/lib/s3";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +21,8 @@ export default async function PlantsPage({ searchParams }: Props) {
   const params = await searchParams;
   const { q, location, sort } = params;
 
+  const userId = await getCurrentUserId();
+
   let plants: Awaited<ReturnType<typeof db.plant.findMany<{
     include: {
       photo: true;
@@ -29,6 +32,7 @@ export default async function PlantsPage({ searchParams }: Props) {
   try {
     plants = await db.plant.findMany({
       where: {
+        userId,
         ...(q ? { name: { contains: q, mode: "insensitive" as const } } : {}),
         ...(location ? { location } : {}),
       },
@@ -64,7 +68,7 @@ export default async function PlantsPage({ searchParams }: Props) {
 
   let locations: string[] = [];
   try {
-    const raw = await db.plant.findMany({ select: { location: true }, distinct: ["location"] });
+    const raw = await db.plant.findMany({ where: { userId }, select: { location: true }, distinct: ["location"] });
     locations = raw.map((r) => r.location);
   } catch {
     // ignore

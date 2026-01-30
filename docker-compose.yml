@@ -20,7 +20,7 @@ services:
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/plant_tracker?schema=public"
       AUTH_SECRET: "change-me-to-a-random-secret"
       UPLOAD_DIR: "./public/uploads"
-      SINGLE_USER_MODE: "true"
+      SINGLE_USER_MODE: "false"
       IDENT_PROVIDER: "mock"
     volumes:
       - uploads:/app/public/uploads

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { getCurrentUserId } from "@/lib/user";
 import { createPresignedReadUrl } from "@/lib/s3";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ async function resolvePhotoUrl(
 
 export default async function PlantDetailPage({ params }: Props) {
   const { id } = await params;
+  const userId = await getCurrentUserId();
 
   const plant = await db.plant.findUnique({
     where: { id },
@@ -54,7 +56,7 @@ export default async function PlantDetailPage({ params }: Props) {
     },
   });
 
-  if (!plant) notFound();
+  if (!plant || plant.userId !== userId) notFound();
 
   // Resolve hero image
   const heroUrl = await resolvePhotoUrl(plant.photo, plant.photoUrl, "thumb");

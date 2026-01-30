@@ -1,10 +1,13 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { getCurrentUserId } from "@/lib/user";
 import { createCheckInSchema } from "@/lib/validations";
 import { revalidatePath } from "next/cache";
 
 export async function createCheckIn(formData: FormData) {
+  const userId = await getCurrentUserId();
+
   const raw = {
     plantId: formData.get("plantId") as string,
     status: formData.get("status") as string || "ok",
@@ -13,6 +16,13 @@ export async function createCheckIn(formData: FormData) {
   };
 
   const data = createCheckInSchema.parse(raw);
+
+  // Verify plant ownership
+  const plant = await db.plant.findUnique({ where: { id: data.plantId } });
+  if (!plant || plant.userId !== userId) {
+    throw new Error("Pflanze nicht gefunden oder keine Berechtigung");
+  }
+
   const photoId = (formData.get("photoId") as string) || undefined;
 
   const today = new Date();
