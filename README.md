@@ -54,7 +54,7 @@ This starts PostgreSQL + the app on port 3000. The app runs `prisma db push` on 
 | `AUTH_SECRET` | NextAuth secret (generate with `openssl rand -base64 32`) | — |
 | `UPLOAD_DIR` | Directory for photo uploads | `./public/uploads` |
 | `SINGLE_USER_MODE` | Skip auth, auto-create admin user | `true` |
-| `IDENT_PROVIDER` | Plant identification provider (`mock`) | `mock` |
+| `IDENT_PROVIDER` | Plant identification provider (`mock` \| `inaturalist`) | `mock` |
 
 ## Deploy on Coolify (Raspberry Pi)
 
