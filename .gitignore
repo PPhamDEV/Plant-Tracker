@@ -21,5 +21,8 @@ npm-debug.log*
 # PWA (build artifact)
 public/sw.js
 
+# MinIO local data
+.minio-data/
+
 # OS
 .DS_Store

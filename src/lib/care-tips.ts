@@ -215,6 +215,116 @@ const STATIC_CARE_DB: Omit<PlantCareProfile, "source">[] = [
       { category: "problems", title: "Häufige Probleme", description: "Keine neue Blüte = zu wenig Licht oder keine Temperaturdifferenz. Faule Wurzeln = zu viel Wasser." },
     ],
   },
+  {
+    commonName: "Baumstrelitzie",
+    scientificName: "Strelitzia nicolai",
+    tips: [
+      { category: "water", title: "Gießen", description: "Im Sommer reichlich gießen, Erde gleichmäßig feucht halten. Im Winter sparsamer, aber nie komplett austrocknen lassen. Staunässe vermeiden." },
+      { category: "light", title: "Licht", description: "Sehr hell bis vollsonnig. Am besten direkt am Süd- oder Westfenster. Verträgt auch volle Sonne. Bei zu wenig Licht kein Wachstum." },
+      { category: "temperature", title: "Temperatur", description: "18–30 °C. Verträgt kurzzeitig bis 5 °C. Im Sommer gerne draußen. Kühle Überwinterung (10–15 °C) möglich aber nicht nötig." },
+      { category: "substrate", title: "Substrat", description: "Kräftige, nährstoffreiche Erde mit guter Drainage. Mischung aus Kompost, Lehm und Perlite ideal. Großer, stabiler Topf nötig." },
+      { category: "problems", title: "Häufige Probleme", description: "Einrollende Blätter = zu wenig Wasser oder zu trockene Luft. Braune Blattränder = Luft zu trocken. Wächst schnell und braucht viel Platz." },
+    ],
+  },
+  {
+    commonName: "Birkenfeige",
+    scientificName: "Ficus benjamina",
+    tips: [
+      { category: "water", title: "Gießen", description: "Gleichmäßig feucht halten, obere Schicht antrocknen lassen. Empfindlich gegen Ballentrockenheit und Staunässe gleichermaßen." },
+      { category: "light", title: "Licht", description: "Helles indirektes Licht. Buntblättrige Sorten brauchen mehr Licht. Standortwechsel vermeiden – reagiert mit Blattfall." },
+      { category: "temperature", title: "Temperatur", description: "18–25 °C ganzjährig. Keine Zugluft, keine kalten Füße (nicht direkt auf Fliesen). Luftfeuchtigkeit über 50 % ideal." },
+      { category: "substrate", title: "Substrat", description: "Hochwertige Zimmerpflanzenerde, leicht sauer. Gute Drainage mit Blähton am Topfboden." },
+      { category: "problems", title: "Häufige Probleme", description: "Blattfall = Standortwechsel, Zugluft oder Gießfehler. Schildläuse und Spinnmilben bei trockener Heizungsluft." },
+    ],
+  },
+  {
+    commonName: "Dieffenbachie",
+    scientificName: "Dieffenbachia",
+    tips: [
+      { category: "water", title: "Gießen", description: "Regelmäßig gießen, Erde leicht feucht halten. Im Winter weniger. Kalkfreies, zimmerwarmes Wasser bevorzugen." },
+      { category: "light", title: "Licht", description: "Helles indirektes Licht bis Halbschatten. Keine direkte Sonne – Blätter verbrennen leicht." },
+      { category: "temperature", title: "Temperatur", description: "18–25 °C. Nicht unter 15 °C. Mag hohe Luftfeuchtigkeit, regelmäßig besprühen." },
+      { category: "substrate", title: "Substrat", description: "Lockere, humose Erde mit guter Drainage. Alle 2 Jahre umtopfen." },
+      { category: "problems", title: "Häufige Probleme", description: "Gelbe Blätter = Übergießen oder Kälte. Achtung: Pflanzensaft ist giftig – Handschuhe beim Umtopfen tragen." },
+    ],
+  },
+  {
+    commonName: "Gebetspflanze",
+    scientificName: "Maranta leuconeura",
+    tips: [
+      { category: "water", title: "Gießen", description: "Gleichmäßig feucht halten, nie austrocknen. Kalkfreies Wasser verwenden (Regenwasser ideal). Im Winter etwas weniger." },
+      { category: "light", title: "Licht", description: "Halbschatten bis helles indirektes Licht. Keine direkte Sonne – Blätter bleichen aus." },
+      { category: "temperature", title: "Temperatur", description: "18–25 °C. Braucht hohe Luftfeuchtigkeit (60 %+). Ideal fürs Badezimmer oder mit Luftbefeuchter." },
+      { category: "substrate", title: "Substrat", description: "Lockere, humose Erde, leicht sauer. Torffreie Mischung mit Perlite und Kokosfaser." },
+      { category: "problems", title: "Häufige Probleme", description: "Eingerollte/braune Blätter = Luft zu trocken. Blasse Blätter = zu viel Licht. Spinnmilben bei trockener Luft." },
+    ],
+  },
+  {
+    commonName: "Dreimasterblume",
+    scientificName: "Tradescantia",
+    tips: [
+      { category: "water", title: "Gießen", description: "Regelmäßig gießen, Erde leicht feucht halten. Verträgt kurze Trockenphasen, aber nicht dauerhaft." },
+      { category: "light", title: "Licht", description: "Helles indirektes Licht für intensive Blattfarbe. Bei zu wenig Licht vergrünen bunte Sorten." },
+      { category: "temperature", title: "Temperatur", description: "15–25 °C. Verträgt normale Raumluftfeuchtigkeit. Im Winter etwas kühler stellen." },
+      { category: "substrate", title: "Substrat", description: "Normale Blumenerde. Sehr schnellwüchsig, regelmäßig zurückschneiden für buschigen Wuchs." },
+      { category: "problems", title: "Häufige Probleme", description: "Kahle Triebe = zu wenig Licht, regelmäßig zurückschneiden. Stecklinge bewurzeln sehr leicht in Wasser." },
+    ],
+  },
+  {
+    commonName: "Yucca-Palme",
+    scientificName: "Yucca elephantipes",
+    tips: [
+      { category: "water", title: "Gießen", description: "Sparsam gießen, Erde zwischen Wassergaben gut antrocknen lassen. Im Winter nur alle 2–3 Wochen. Verträgt Trockenheit besser als Nässe." },
+      { category: "light", title: "Licht", description: "Volle Sonne bis helles Licht. Am besten am Südfenster. Im Sommer gerne auf Balkon oder Terrasse." },
+      { category: "temperature", title: "Temperatur", description: "10–30 °C. Sehr robust, verträgt auch kühle Räume im Winter. Keine Probleme mit trockener Heizungsluft." },
+      { category: "substrate", title: "Substrat", description: "Durchlässige Erde, Kakteenerde oder Mischung mit viel Sand. Schwerer Topf wegen Kopflastigkeit." },
+      { category: "problems", title: "Häufige Probleme", description: "Weiche Stämme = Fäulnis durch Übergießen. Braune untere Blätter = natürlicher Abwurf. Sehr pflegeleicht." },
+    ],
+  },
+  {
+    commonName: "Glückskastanie",
+    scientificName: "Pachira aquatica",
+    tips: [
+      { category: "water", title: "Gießen", description: "Mäßig gießen, obere Erdschicht antrocknen lassen. Stamm speichert Wasser. Staunässe führt schnell zu Stammfäule." },
+      { category: "light", title: "Licht", description: "Helles indirektes Licht. Verträgt auch Halbschatten. Keine direkte Mittagssonne." },
+      { category: "temperature", title: "Temperatur", description: "18–25 °C. Nicht unter 12 °C. Normale Raumluftfeuchtigkeit ist ausreichend." },
+      { category: "substrate", title: "Substrat", description: "Lockere, durchlässige Erde. Drainage-Schicht am Topfboden wichtig. Alle 2–3 Jahre umtopfen." },
+      { category: "problems", title: "Häufige Probleme", description: "Blattfall = Standortwechsel oder Übergießen. Weicher Stamm = Fäulnis, sofort Gießen reduzieren." },
+    ],
+  },
+  {
+    commonName: "Bananenpflanze",
+    scientificName: "Musa",
+    tips: [
+      { category: "water", title: "Gießen", description: "Im Sommer reichlich gießen, Erde stets feucht halten. Im Winter deutlich weniger. Große Blätter verdunsten viel Wasser." },
+      { category: "light", title: "Licht", description: "Volle Sonne bis sehr helles Licht. Je mehr Licht, desto besser. Am besten am Südfenster." },
+      { category: "temperature", title: "Temperatur", description: "20–30 °C optimal. Nicht unter 15 °C. Hohe Luftfeuchtigkeit wichtig, regelmäßig besprühen." },
+      { category: "substrate", title: "Substrat", description: "Nährstoffreiche, humose Erde mit guter Drainage. Regelmäßig düngen in der Wachstumsphase. Großer Topf nötig." },
+      { category: "problems", title: "Häufige Probleme", description: "Braune Blattränder = Luft zu trocken. Einreißende Blätter = normal bei Wind/Berührung. Sehr schnellwüchsig, braucht viel Platz." },
+    ],
+  },
+  {
+    commonName: "Kentiapalme",
+    scientificName: "Howea forsteriana",
+    tips: [
+      { category: "water", title: "Gießen", description: "Mäßig gießen, obere Erdschicht antrocknen lassen. Im Winter sparsamer. Empfindlich gegen Staunässe." },
+      { category: "light", title: "Licht", description: "Halbschatten bis helles indirektes Licht. Eine der wenigen Palmen, die mit wenig Licht zurechtkommt." },
+      { category: "temperature", title: "Temperatur", description: "15–25 °C. Verträgt kühlere Räume bis 10 °C. Keine direkte Heizungsluft." },
+      { category: "substrate", title: "Substrat", description: "Palmenerde oder Mischung aus Blumenerde und Sand. Umtopfen nur wenn nötig, mag es nicht gestört zu werden." },
+      { category: "problems", title: "Häufige Probleme", description: "Braune Blattspitzen = zu trockene Luft oder zu viel Dünger. Wächst langsam, Geduld nötig. Spinnmilben bei trockener Luft." },
+    ],
+  },
+  {
+    commonName: "Sukkulente",
+    scientificName: "Echeveria",
+    tips: [
+      { category: "water", title: "Gießen", description: "Erde komplett austrocknen lassen, dann gründlich gießen. Im Winter fast gar nicht. Kein Wasser auf die Rosette." },
+      { category: "light", title: "Licht", description: "Volle Sonne. Braucht so viel Licht wie möglich. Ohne genug Licht werden sie lang und verlieren die Form." },
+      { category: "temperature", title: "Temperatur", description: "10–30 °C. Kühle Überwinterung (5–10 °C) fördert Blüte. Verträgt trockene Luft problemlos." },
+      { category: "substrate", title: "Substrat", description: "Kakteenerde oder mineralisches Substrat (Bims, Lavagranulat). Drainage essentiell. Tontopf ideal." },
+      { category: "problems", title: "Häufige Probleme", description: "Gestreckter Wuchs (Etiolement) = zu wenig Licht. Matschige Blätter = Fäulnis durch zu viel Wasser." },
+    ],
+  },
 ];
 
 const GENERIC_TIPS: CareTip[] = [
@@ -251,12 +361,37 @@ function dbRecordToProfile(record: {
   };
 }
 
+// ─── German common name aliases → scientificName in STATIC_CARE_DB ───
+
+const GERMAN_ALIASES: Record<string, string> = {
+  "efeutute": "Epipremnum aureum",
+  "fensterblatt": "Monstera deliciosa",
+  "baumstrelitzie": "Strelitzia nicolai",
+  "schwiegermutterzunge": "Sansevieria trifasciata",
+  "schwertfarn": "Chlorophytum comosum",
+  "herzblattphilodendron": "Philodendron hederaceum",
+  "wachsblume": "Hoya carnosa",
+  "glücksfeder": "Zamioculcas zamiifolia",
+  "chinesischer geldbaum": "Pilea peperomioides",
+  "pfeilblatt": "Alocasia",
+  "korbmarante": "Calathea",
+  "drachenbaum": "Dracaena",
+  "nachtfalterorchidee": "Phalaenopsis",
+  "dickblatt": "Crassula ovata",
+  "benjamin": "Ficus benjamina",
+  "bananenbaum": "Musa",
+  "bananenstaude": "Musa",
+  "gebetspflanze": "Maranta leuconeura",
+  "palmlilie": "Yucca elephantipes",
+};
+
 // ─── Helper: Fuzzy match against static DB ───
 
 function findInStaticDb(species: string): Omit<PlantCareProfile, "source"> | null {
   const q = species.toLowerCase().trim();
   if (!q) return null;
 
+  // 1. Direct substring match on scientific/common name
   for (const profile of STATIC_CARE_DB) {
     const sci = profile.scientificName.toLowerCase();
     const com = profile.commonName.toLowerCase();
@@ -264,6 +399,17 @@ function findInStaticDb(species: string): Omit<PlantCareProfile, "source"> | nul
       return profile;
     }
   }
+
+  // 2. German alias lookup
+  const aliasTarget = GERMAN_ALIASES[q];
+  if (aliasTarget) {
+    for (const profile of STATIC_CARE_DB) {
+      if (profile.scientificName.toLowerCase() === aliasTarget.toLowerCase()) {
+        return profile;
+      }
+    }
+  }
+
   return null;
 }
 
@@ -294,8 +440,8 @@ export async function getCareTips(
       },
     });
     if (cached) return dbRecordToProfile(cached);
-  } catch {
-    // DB not available — continue with other sources
+  } catch (err) {
+    console.warn("[care-tips] DB cache lookup failed:", err instanceof Error ? err.message : err);
   }
 
   // 2. Try Perenual API (only if env key is set)
@@ -330,8 +476,8 @@ export async function getCareTips(
             },
           });
           return dbRecordToProfile(saved);
-        } catch {
-          // DB write failed — still return the data
+        } catch (err) {
+          console.warn("[care-tips] DB cache write failed:", err instanceof Error ? err.message : err);
           return {
             commonName: apiData.commonName,
             scientificName: apiData.scientificName,
@@ -346,8 +492,8 @@ export async function getCareTips(
           };
         }
       }
-    } catch {
-      // API error — fall through to static
+    } catch (err) {
+      console.warn("[care-tips] Perenual API error:", err instanceof Error ? err.message : err);
     }
   }
 
@@ -376,8 +522,8 @@ export async function getCareTips(
         },
         update: {},
       });
-    } catch {
-      // DB write failed — still return static data
+    } catch (err) {
+      console.warn("[care-tips] DB write for static cache failed:", err instanceof Error ? err.message : err);
     }
 
     return { ...staticMatch, source: "static" };
