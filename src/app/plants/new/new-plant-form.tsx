@@ -29,14 +29,21 @@ export function NewPlantForm() {
   async function handleIdentify() {
     if (!photoId) return;
     setIdentifying(true);
+    setIdentResults([]);
     try {
       const res = await fetch(`/api/identify-plant?photoId=${photoId}`);
       const data = await res.json();
-      if (data.results) {
-        setIdentResults(data.results);
+      if (!res.ok) {
+        throw new Error(data.error || "Erkennung fehlgeschlagen");
       }
-    } catch {
-      toast({ title: "Fehler", description: "Erkennung fehlgeschlagen", variant: "destructive" });
+      if (data.results?.length > 0) {
+        setIdentResults(data.results);
+      } else {
+        toast({ title: "Keine Treffer", description: "Die Pflanze konnte nicht erkannt werden. Versuche ein anderes Foto.", variant: "destructive" });
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erkennung fehlgeschlagen";
+      toast({ title: "Fehler", description: message, variant: "destructive" });
     } finally {
       setIdentifying(false);
     }
@@ -83,30 +90,39 @@ export function NewPlantForm() {
               size="sm"
               onClick={handleIdentify}
               disabled={identifying}
+              className="gap-1.5"
             >
               {identifying ? (
-                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Analysiere…
+                </>
               ) : (
-                <Sparkles className="mr-1 h-4 w-4" />
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  Pflanze erkennen
+                </>
               )}
-              Pflanze erkennen
             </Button>
           )}
           {identResults.length > 0 && (
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Vorschläge:</p>
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              <p className="text-xs font-medium text-muted-foreground">Vorschläge — zum Übernehmen antippen:</p>
               {identResults.map((r, i) => (
                 <button
                   key={i}
                   type="button"
                   onClick={() => applyIdentResult(r)}
-                  className="flex w-full items-center justify-between rounded-md border border-border p-2 text-left text-sm hover:bg-muted"
+                  className="group relative flex w-full items-center justify-between overflow-hidden rounded-lg border border-border p-3 text-left text-sm transition-colors hover:border-primary/40 hover:bg-primary/5"
                 >
-                  <span>
+                  <div className="absolute inset-y-0 left-0 bg-primary/10 transition-all"
+                    style={{ width: `${Math.round(r.confidence * 100)}%` }}
+                  />
+                  <span className="relative z-10">
                     <strong>{r.name}</strong>{" "}
-                    <span className="text-muted-foreground">({r.species})</span>
+                    <span className="text-muted-foreground italic">({r.species})</span>
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="relative z-10 ml-2 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium tabular-nums text-primary">
                     {Math.round(r.confidence * 100)}%
                   </span>
                 </button>

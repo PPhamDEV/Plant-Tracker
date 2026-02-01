@@ -64,6 +64,7 @@ export class INaturalistIdentificationProvider
       body: form,
       // iNat sometimes blocks requests without UA.
       headers: { "user-agent": "plant-tracker/1.0 (OpenClaw)" },
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!res.ok) {
