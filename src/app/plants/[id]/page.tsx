@@ -10,7 +10,9 @@ import { format, formatDistanceToNow } from "date-fns";
 import { de } from "date-fns/locale";
 import { PlantActions } from "./plant-actions";
 import { TimelineTab } from "./timeline-tab";
+import { CareTipsSheet } from "./care-tips-sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getCareTips, getGenericCareTips } from "@/lib/care-tips";
 
 export const dynamic = "force-dynamic";
 
@@ -174,6 +176,15 @@ export default async function PlantDetailPage({ params }: Props) {
           </CardContent>
         </Card>
       )}
+
+      {/* Pflege-Tipps */}
+      {(() => {
+        const careProfile = getCareTips(plant.species);
+        const tips = careProfile?.tips ?? getGenericCareTips();
+        const isSpecific = !!careProfile;
+        const tipPlantName = careProfile?.commonName ?? null;
+        return <CareTipsSheet tips={tips} plantName={tipPlantName} isSpecific={isSpecific} />;
+      })()}
 
       {/* Tabs: Timeline / Watering / Fertilizing */}
       <Tabs defaultValue="timeline">
