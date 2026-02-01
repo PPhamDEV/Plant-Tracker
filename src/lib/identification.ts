@@ -51,7 +51,7 @@ export class INaturalistIdentificationProvider
     // iNat doesn't care much about filename; mime detection is optional.
     form.append(
       "image",
-      new Blob([imageBuffer], { type: "image/jpeg" }),
+      new Blob([new Uint8Array(imageBuffer)], { type: "image/jpeg" }),
       "plant.jpg"
     );
 
