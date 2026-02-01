@@ -18,6 +18,7 @@ interface CareTipsSheetProps {
   tips: CareTip[];
   plantName: string | null;
   isSpecific: boolean;
+  source?: "db" | "perenual" | "static" | null;
 }
 
 const CATEGORY_CONFIG: Record<
@@ -39,6 +40,7 @@ export function CareTipsSheet({
   tips,
   plantName,
   isSpecific,
+  source,
 }: CareTipsSheetProps) {
   const [open, setOpen] = useState(false);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
@@ -143,6 +145,17 @@ export function CareTipsSheet({
               </button>
             );
           })}
+
+          {/* Source indicator */}
+          {source && (
+            <p className="pt-1 text-center text-[10px] text-muted-foreground/60">
+              {source === "perenual"
+                ? "Quelle: Perenual Plant API"
+                : source === "db"
+                  ? "Aus der Datenbank"
+                  : "Redaktionelle Pflege-Tipps"}
+            </p>
+          )}
         </div>
       </BottomSheet>
     </>

@@ -1,3 +1,6 @@
+import { db } from "@/lib/db";
+import { fetchCareDataFromPerenual } from "@/lib/perenual";
+
 export interface CareTip {
   category: "water" | "light" | "temperature" | "substrate" | "problems";
   title: string;
@@ -8,9 +11,12 @@ export interface PlantCareProfile {
   commonName: string;
   scientificName: string;
   tips: CareTip[];
+  source: "db" | "perenual" | "static";
 }
 
-const CARE_TIPS_DB: PlantCareProfile[] = [
+// ─── Static Fallback Database (18 popular houseplants, German) ───
+
+const STATIC_CARE_DB: Omit<PlantCareProfile, "source">[] = [
   {
     commonName: "Monstera",
     scientificName: "Monstera deliciosa",
@@ -219,16 +225,39 @@ const GENERIC_TIPS: CareTip[] = [
   { category: "problems", title: "Häufige Probleme", description: "Gelbe Blätter deuten oft auf Übergießen hin, braune Spitzen auf zu trockene Luft. Im Zweifel weniger gießen." },
 ];
 
-/**
- * Look up species-specific care tips.
- * Uses fuzzy matching (lowercase substring) against scientific names and common names.
- */
-export function getCareTips(species: string | null | undefined): PlantCareProfile | null {
-  if (!species) return null;
+// ─── Helper: Convert DB record to PlantCareProfile ───
+
+function dbRecordToProfile(record: {
+  scientificName: string;
+  commonName: string;
+  watering: string;
+  light: string;
+  temperature: string;
+  substrate: string;
+  problems: string;
+  source: string;
+}): PlantCareProfile {
+  return {
+    commonName: record.commonName,
+    scientificName: record.scientificName,
+    source: record.source === "perenual" ? "perenual" : "db",
+    tips: [
+      { category: "water", title: "Gießen", description: record.watering },
+      { category: "light", title: "Licht", description: record.light },
+      { category: "temperature", title: "Temperatur", description: record.temperature },
+      { category: "substrate", title: "Substrat", description: record.substrate },
+      { category: "problems", title: "Häufige Probleme", description: record.problems },
+    ],
+  };
+}
+
+// ─── Helper: Fuzzy match against static DB ───
+
+function findInStaticDb(species: string): Omit<PlantCareProfile, "source"> | null {
   const q = species.toLowerCase().trim();
   if (!q) return null;
 
-  for (const profile of CARE_TIPS_DB) {
+  for (const profile of STATIC_CARE_DB) {
     const sci = profile.scientificName.toLowerCase();
     const com = profile.commonName.toLowerCase();
     if (sci.includes(q) || q.includes(sci) || com.includes(q) || q.includes(com)) {
@@ -238,7 +267,126 @@ export function getCareTips(species: string | null | undefined): PlantCareProfil
   return null;
 }
 
-/** Generic care tips for plants not in the database. */
+/**
+ * Get care tips for a species.
+ *
+ * Priority:
+ * 1. Database (previously cached)
+ * 2. Perenual API (fetches + caches in DB)
+ * 3. Static fallback DB (18 popular plants)
+ * 4. Generic tips
+ */
+export async function getCareTips(
+  species: string | null | undefined
+): Promise<PlantCareProfile | null> {
+  if (!species) return null;
+  const q = species.trim();
+  if (!q) return null;
+
+  // 1. Check DB cache (exact match on scientificName)
+  try {
+    const cached = await db.plantCareData.findFirst({
+      where: {
+        OR: [
+          { scientificName: { contains: q, mode: "insensitive" } },
+          { commonName: { contains: q, mode: "insensitive" } },
+        ],
+      },
+    });
+    if (cached) return dbRecordToProfile(cached);
+  } catch {
+    // DB not available — continue with other sources
+  }
+
+  // 2. Try Perenual API (only if env key is set)
+  if (process.env.PERENUAL_API_KEY) {
+    try {
+      const apiData = await fetchCareDataFromPerenual(q);
+      if (apiData) {
+        // Cache in DB for future use
+        try {
+          const saved = await db.plantCareData.upsert({
+            where: { scientificName: apiData.scientificName },
+            create: {
+              scientificName: apiData.scientificName,
+              commonName: apiData.commonName,
+              watering: apiData.watering,
+              light: apiData.light,
+              temperature: apiData.temperature,
+              substrate: apiData.substrate,
+              problems: apiData.problems,
+              source: "perenual",
+              perenualId: apiData.perenualId,
+            },
+            update: {
+              commonName: apiData.commonName,
+              watering: apiData.watering,
+              light: apiData.light,
+              temperature: apiData.temperature,
+              substrate: apiData.substrate,
+              problems: apiData.problems,
+              source: "perenual",
+              perenualId: apiData.perenualId,
+            },
+          });
+          return dbRecordToProfile(saved);
+        } catch {
+          // DB write failed — still return the data
+          return {
+            commonName: apiData.commonName,
+            scientificName: apiData.scientificName,
+            source: "perenual",
+            tips: [
+              { category: "water", title: "Gießen", description: apiData.watering },
+              { category: "light", title: "Licht", description: apiData.light },
+              { category: "temperature", title: "Temperatur", description: apiData.temperature },
+              { category: "substrate", title: "Substrat", description: apiData.substrate },
+              { category: "problems", title: "Häufige Probleme", description: apiData.problems },
+            ],
+          };
+        }
+      }
+    } catch {
+      // API error — fall through to static
+    }
+  }
+
+  // 3. Static fallback DB
+  const staticMatch = findInStaticDb(q);
+  if (staticMatch) {
+    // Also cache this in DB for consistent future lookups
+    try {
+      const waterTip = staticMatch.tips.find((t) => t.category === "water");
+      const lightTip = staticMatch.tips.find((t) => t.category === "light");
+      const tempTip = staticMatch.tips.find((t) => t.category === "temperature");
+      const subTip = staticMatch.tips.find((t) => t.category === "substrate");
+      const probTip = staticMatch.tips.find((t) => t.category === "problems");
+
+      await db.plantCareData.upsert({
+        where: { scientificName: staticMatch.scientificName },
+        create: {
+          scientificName: staticMatch.scientificName,
+          commonName: staticMatch.commonName,
+          watering: waterTip?.description ?? "",
+          light: lightTip?.description ?? "",
+          temperature: tempTip?.description ?? "",
+          substrate: subTip?.description ?? "",
+          problems: probTip?.description ?? "",
+          source: "static",
+        },
+        update: {},
+      });
+    } catch {
+      // DB write failed — still return static data
+    }
+
+    return { ...staticMatch, source: "static" };
+  }
+
+  return null;
+}
+
+/** Generic care tips for plants not in any database. */
 export function getGenericCareTips(): CareTip[] {
   return GENERIC_TIPS;
 }

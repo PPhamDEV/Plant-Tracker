@@ -178,13 +178,7 @@ export default async function PlantDetailPage({ params }: Props) {
       )}
 
       {/* Pflege-Tipps */}
-      {(() => {
-        const careProfile = getCareTips(plant.species);
-        const tips = careProfile?.tips ?? getGenericCareTips();
-        const isSpecific = !!careProfile;
-        const tipPlantName = careProfile?.commonName ?? null;
-        return <CareTipsSheet tips={tips} plantName={tipPlantName} isSpecific={isSpecific} />;
-      })()}
+      <CareTipsSection species={plant.species} />
 
       {/* Tabs: Timeline / Watering / Fertilizing */}
       <Tabs defaultValue="timeline">
@@ -254,5 +248,21 @@ export default async function PlantDetailPage({ params }: Props) {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+async function CareTipsSection({ species }: { species: string | null }) {
+  const careProfile = await getCareTips(species);
+  const tips = careProfile?.tips ?? getGenericCareTips();
+  const isSpecific = !!careProfile;
+  const tipPlantName = careProfile?.commonName ?? null;
+  const source = careProfile?.source ?? null;
+  return (
+    <CareTipsSheet
+      tips={tips}
+      plantName={tipPlantName}
+      isSpecific={isSpecific}
+      source={source}
+    />
   );
 }

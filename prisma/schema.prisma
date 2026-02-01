@@ -125,3 +125,21 @@ model FertilizingEvent {
   @@index([date])
   @@map("fertilizing_events")
 }
+
+model PlantCareData {
+  id             String   @id @default(cuid())
+  scientificName String   @unique
+  commonName     String
+  watering       String   // Gießen-Beschreibung
+  light          String   // Licht-Beschreibung
+  temperature    String   // Temperatur-Beschreibung
+  substrate      String   // Substrat-Beschreibung
+  problems       String   // Häufige Probleme
+  source         String   @default("static") // "perenual" | "static"
+  perenualId     Int?     // Perenual API ID, falls vorhanden
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([commonName])
+  @@map("plant_care_data")
+}
